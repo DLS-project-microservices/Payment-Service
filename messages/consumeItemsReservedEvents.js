@@ -6,7 +6,7 @@ async function consumeItemsReservedEvents() {
         const connection = await connectToRabbitMQ();
         const channel = await connection.createChannel();
         const exchange = 'product';
-        const queue = 'items_reserved';
+        const queue = 'order_started';
 
         await channel.assertExchange(exchange, 'direct', {
             durable: true
@@ -16,7 +16,7 @@ async function consumeItemsReservedEvents() {
             durable: true
         });
 
-        channel.bindQueue(assertQueue.queue, exchange, 'Items to be reserved');
+        channel.bindQueue(assertQueue.queue, exchange, 'Items reserved');
 
         console.log('Waiting for items_reserved events...');
 
