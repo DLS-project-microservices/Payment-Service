@@ -11,13 +11,14 @@ async function publishPaymentCaptured(order) {
             durable: true
         });
 
+        // Not sure if this is needed
         await channel.assertQueue(queueName, {
             durable: true
         });
-
+        // Not sure if this is needed
         await channel.bindQueue(queueName, exchange, 'payment_captured');
-
-        channel.publish(exchange, 'payment_captured', Buffer.from(order));
+        
+        channel.publish(exchange, 'payment_captured', Buffer.from(JSON.stringify(order)));
         console.log('payment_captured message published successfully');
     } catch (error) {
         console.error('Error publishing payment_captured message:', error);

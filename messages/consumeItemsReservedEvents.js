@@ -16,14 +16,16 @@ async function consumeItemsReservedEvents() {
             durable: true
         });
 
-        channel.bindQueue(assertQueue.queue, exchange, 'Items reserved');
+        channel.bindQueue(assertQueue.queue, exchange, 'items reserved');
 
         console.log('Waiting for items_reserved events...');
 
         channel.consume(assertQueue.queue, async (msg) => {
             try {
                 if (msg !== null) {
-                    const messageContent = msg.content.toString();
+                    const messageContent = JSON.parse(msg.content.toString());
+                    console.log(messageContent);
+                    
                     await publishPaymentCaptured(messageContent);
                     console.log('items_reserved event processed successfully');
                     channel.ack(msg);
