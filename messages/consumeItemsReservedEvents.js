@@ -5,10 +5,10 @@ async function consumeItemsReservedEvents() {
     try {
         const connection = await connectToRabbitMQ();
         const channel = await connection.createChannel();
-        const exchange = 'order_direct';
+        const exchange = 'order_fanout';
         const queue = 'payment_service_consume_items_reserved';
 
-        await channel.assertExchange(exchange, 'direct', {
+        await channel.assertExchange(exchange, 'fanout', {
             durable: true
         });
 
@@ -16,7 +16,7 @@ async function consumeItemsReservedEvents() {
             durable: true
         });
 
-        channel.bindQueue(assertQueue.queue, exchange, 'items reserved');
+        channel.bindQueue(assertQueue.queue, exchange, '');
 
         console.log('Waiting for items_reserved events...');
 
@@ -24,10 +24,10 @@ async function consumeItemsReservedEvents() {
             try {
                 if (msg !== null) {
                     const messageContent = JSON.parse(msg.content.toString());
-                    console.log(messageContent);
                     
                     await publishPaymentCaptured(messageContent);
                     console.log('items_reserved event processed successfully');
+                    
                     channel.ack(msg);
                 }
             } catch (error) {
