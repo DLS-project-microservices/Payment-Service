@@ -3,8 +3,13 @@ import { consumeItemsReservedEvents } from './messages/consumeItemsReservedEvent
 import express from 'express';
 import mongoose from 'mongoose';
 import dotenv from 'dotenv';
+import { Stripe } from "stripe"
 
 dotenv.config();
+
+const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
+    apiVersion: "2020-08-27",
+  })
 
 const url = process.env.MONGODB_URI;
 mongoose.connect(url);
@@ -24,7 +29,8 @@ function handlePaymentIntentFailed(paymentIntent) {
     console.log('PaymentIntent failed!');
 }
 
-const endpointSecret = "whsec_3242e4b0f114bb39b4bb502b7ae52a29c2d1a44f0d506e2b50522a98a82d6706";
+// whsec_3242e4b0f114bb39b4bb502b7ae52a29c2d1a44f0d506e2b50522a98a82d6706
+const endpointSecret = "whsec_zfIKmNoWVaMPd6IsuxpISjfGqjzmC3WE";
 
 app.post('/webhook', express.raw({type: 'application/json'}), (request, response) => {
   const sig = request.headers['stripe-signature'];
@@ -46,6 +52,7 @@ app.post('/webhook', express.raw({type: 'application/json'}), (request, response
       break;
     case 'charge.succeeded':
       const chargeSucceeded = event.data.object;
+      console.log(chargeSucceeded);
       // Then define and call a function to handle the event charge.succeeded
       break;
     // ... handle other event types
