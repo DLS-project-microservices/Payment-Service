@@ -1,5 +1,6 @@
 import connectToRabbitMQ from './connection.js';
 import publishPaymentCaptured from './publishPaymentCaptured.js';
+import { handlePaymentIntentMessage } from '../services/paymentService.js';
 
 async function consumeItemsReservedEvents() {
     try {
@@ -25,7 +26,7 @@ async function consumeItemsReservedEvents() {
                 if (msg !== null) {
                     const messageContent = JSON.parse(msg.content.toString());
                     
-                    await publishPaymentCaptured(messageContent);
+                    await handlePaymentIntentMessage(messageContent);
                     console.log('items_reserved event processed successfully');
                     
                     channel.ack(msg);

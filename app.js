@@ -4,6 +4,7 @@ import express from 'express';
 import mongoose from 'mongoose';
 import dotenv from 'dotenv';
 import { Stripe } from "stripe"
+import { handlePaymentIntentWebhookEvent } from './services/paymentService.js';
 
 dotenv.config();
 
@@ -21,20 +22,13 @@ db.on('error', (error) => {
 
 const app = express();
 
-function handlePaymentIntentSucceeded(paymentIntent) {
-    console.log('PaymentIntent was successful!');
-}
-
-function handlePaymentIntentFailed(paymentIntent) {
-    console.log('PaymentIntent failed!');
-}
 
 // whsec_3242e4b0f114bb39b4bb502b7ae52a29c2d1a44f0d506e2b50522a98a82d6706
 const endpointSecret = "whsec_zfIKmNoWVaMPd6IsuxpISjfGqjzmC3WE";
 
-app.post('/webhook', express.raw({type: 'application/json'}), (request, response) => {
+app.post('/webhook', express.raw({type: 'application/json'}), async (request, response) => {
   const sig = request.headers['stripe-signature'];
-
+  console.log('testtest');
   let event;
 
   try {
@@ -44,21 +38,9 @@ app.post('/webhook', express.raw({type: 'application/json'}), (request, response
     return;
   }
 
-  // Handle the event
-  switch (event.type) {
-    case 'charge.failed':
-      const chargeFailed = event.data.object;
+  const paymentIntent = event.data.object;
       // Then define and call a function to handle the event charge.failed
-      break;
-    case 'charge.succeeded':
-      const chargeSucceeded = event.data.object;
-      console.log(chargeSucceeded);
-      // Then define and call a function to handle the event charge.succeeded
-      break;
-    // ... handle other event types
-    default:
-      console.log(`Unhandled event type ${event.type}`);
-  }
+      await handlePaymentIntentWebhookEvent(paymentIntent);
 
   // Return a 200 response to acknowledge receipt of the event
   response.send();
