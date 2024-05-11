@@ -1,15 +1,10 @@
-import dotenv from 'dotenv';
-import { Stripe } from "stripe"
 import Payment from '../models/payment.js';
 import publishPaymentCaptured from '../messages/publishPaymentCaptured.js';
-
-dotenv.config();
 
 async function handlePaymentIntentWebhookEvent(paymentIntent) {
     console.log(paymentIntent);
     // Fetch payment_intent from DB by paymentIntent.id
     const payment = await Payment.findOne({ payment_intent_id: paymentIntent.payment_intent });
-    console.log(payment);
 
     // If payment_intent is found, send RabbitMQ continue order-flow success/failed
     if (payment) {
