@@ -69,7 +69,8 @@ async function handlePaymentIntentMessage(message) {
     else if (!payment) {
         const newPayment = new Payment({
             payment_intent_id: message.payment_intent,
-            payment_status: 'waiting'
+            payment_status: 'waiting',
+            order_id: message.order_id   
         });
 
         try {
