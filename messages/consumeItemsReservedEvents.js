@@ -1,14 +1,13 @@
-import connectToRabbitMQ from './connection.js';
-import publishPaymentCaptured from './publishPaymentCaptured.js';
+import { connectToRabbitMQ } from 'amqplib-retry-wrapper-dls';
 import { handlePaymentIntentMessage } from '../services/paymentService.js';
 
-async function consumeItemsReservedEvents() {
-    try {
-        const connection = await connectToRabbitMQ();
-        const channel = await connection.createChannel();
-        const exchange = 'order_fanout';
-        const queue = 'payment_service_consume_items_reserved';
+const channel = await connectToRabbitMQ(process.env.AMQP_HOST);
 
+async function consumeItemsReservedEvents() {
+    const exchange = 'order_fanout';
+    const queue = 'payment_service_consume_items_reserved';
+    
+    try {
         await channel.assertExchange(exchange, 'fanout', {
             durable: true
         });

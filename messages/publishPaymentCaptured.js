@@ -1,11 +1,11 @@
-import connectToRabbitMQ from './connection.js';
+import { connectToRabbitMQ } from 'amqplib-retry-wrapper-dls';
+
+const channel = await connectToRabbitMQ(process.env.AMQP_HOST);
 
 async function publishPaymentCaptured(order) {
+    const exchange = 'order_direct';
+    
     try {
-        const connection = await connectToRabbitMQ();
-        const channel = await connection.createChannel();
-        const exchange = 'order_direct';
-
         await channel.assertExchange(exchange, 'direct', {
             durable: true
         });
