@@ -35,5 +35,5 @@ app.post('/webhook', express.raw({type: 'application/json'}), async (request, re
   response.send();
 });
 
-const PORT = process.env.PORT ?? 8000;
+const PORT = process.env.PORT ?? 3004;
 app.listen(8000, () => console.log('Running on port 8000'));
