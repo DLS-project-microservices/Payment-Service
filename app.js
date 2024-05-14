@@ -1,5 +1,4 @@
 import 'dotenv/config';
-import connectToRabbitMQ from './messages/connection.js';
 import { consumeItemsReservedEvents } from './messages/consumeItemsReservedEvents.js';
 import express from 'express';
 import mongoose from 'mongoose';
@@ -12,7 +11,6 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
 
 // Not catching erros on purpose, so that the application crashes fast.
 await mongoose.connect(process.env.MONGODB_URI);
-await connectToRabbitMQ();
 await consumeItemsReservedEvents();
 
 const app = express();
