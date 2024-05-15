@@ -1,9 +1,19 @@
 import 'dotenv/config';
+import SmeeClient from 'smee-client';
 import { consumeItemsReservedEvents } from './messages/consumeItemsReservedEvents.js';
 import express from 'express';
 import mongoose from 'mongoose';
 import { Stripe } from "stripe"
 import { handlePaymentIntentWebhookEvent } from './services/paymentService.js';
+
+const smee = new SmeeClient({
+  source: 'https://smee.io/abc123',
+  target: 'http://localhost:8000/webhook',
+  logger: console
+})
+
+const events = smee.start()
+console.log(events);
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
     apiVersion: "2020-08-27",
@@ -15,6 +25,10 @@ await consumeItemsReservedEvents();
 
 const app = express();
 
+app.get('/test', (req, res) => {
+  res.send('hello')
+})
+
 app.post('/webhook', express.raw({type: 'application/json'}), async (request, response) => {
   const sig = request.headers['stripe-signature'];
   let event;
@@ -22,6 +36,7 @@ app.post('/webhook', express.raw({type: 'application/json'}), async (request, re
   try {
     event = stripe.webhooks.constructEvent(request.body, sig, process.env.STRIPE_WEBHOOK_SECRET);
   } catch (err) {
+    console.log(err);
     response.status(400).send(`Webhook Error: ${err.message}`);
     return;
   }
