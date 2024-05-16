@@ -19,10 +19,6 @@ await consumeItemsReservedEvents();
 
 const app = express();
 
-app.get('/test', (req, res) => {
-  res.send('hello')
-})
-
 app.post('/webhook', express.json(), async (request, response) => {
   try {
     const event = request.body.data.object
@@ -38,4 +34,4 @@ app.post('/webhook', express.json(), async (request, response) => {
 });
 
 const PORT = process.env.PORT ?? 3004;
-app.listen(8000, () => console.log('Running on port 8000'));
+app.listen(PORT, () => console.log('Running on port', PORT));

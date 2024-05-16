@@ -2,7 +2,6 @@ import Payment from '../models/payment.js';
 import publishPaymentCaptured from '../messages/publishPaymentCaptured.js';
 
 async function handlePaymentIntentWebhookEvent(paymentIntent) {
-    console.log(paymentIntent);
     // Fetch payment_intent from DB by paymentIntent.id
     const payment = await Payment.findOne({ payment_intent_id: paymentIntent.payment_intent });
 
@@ -32,7 +31,6 @@ async function handlePaymentIntentWebhookEvent(paymentIntent) {
 
         try {
             const savedPayment = await newPayment.save();
-            console.log(savedPayment);
         } catch (error) {
             console.log(error);
         }
