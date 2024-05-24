@@ -24,7 +24,7 @@ async function consumeItemsReservedEvents() {
             try {
                 if (msg !== null) {
                     const messageContent = JSON.parse(msg.content.toString());
-                    
+                    console.log(messageContent);
                     await handlePaymentIntentMessage(messageContent);
                     console.log('items_reserved event processed successfully');
                     

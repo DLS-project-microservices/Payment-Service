@@ -1,4 +1,5 @@
-import mongoose from "mongoose";
+import mongoose from 'mongoose';
+import orderSchema from './order.js';
 
 const paymentSchema = new mongoose.Schema({
     payment_intent_id: { 
@@ -7,17 +8,21 @@ const paymentSchema = new mongoose.Schema({
     },
     total_payment: {
         type: Number,
-        default: 0,
+        default: 0
     },
     payment_status: {
         type: String,
-        enum: ['succeeded', 'failed', 'waiting'],
+        enum: ['succeeded', 'failed', 'waiting', 'refunded'],
         required: true
     },
     order_id: {
-        type: String,
+        type: String
+    },
+    order: {
+        type: orderSchema,
+        required: false
     }
 });
 
-const Payment = mongoose.model("Payment", paymentSchema);
+const Payment = mongoose.model('Payment', paymentSchema);
 export default Payment;
