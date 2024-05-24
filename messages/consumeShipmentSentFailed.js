@@ -25,9 +25,9 @@ async function consumeShipmentSentFailed() {
             try {
                 if (msg !== null) {
                     const messageContent = JSON.parse(msg.content.toString());
-                    await handlePaymentRefund(messageContent.order_id);
+                    await handlePaymentRefund(messageContent._id.$oid);
                     await publishPaymentCapturedFailed(messageContent)
-                    
+                                
                     channel.ack(msg);
                 }
             } catch (error) {

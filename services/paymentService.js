@@ -1,43 +1,39 @@
 import { Stripe } from 'stripe';
 import Payment from '../models/payment.js';
 import publishPaymentCaptured from '../messages/publishPaymentCaptured.js';
+import publishPaymentCapturedFailed from '../messages/publishPaymentCapturedFailed.js';
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
     apiVersion: "2020-08-27",
   })
 
-async function handlePaymentIntentWebhookEvent(paymentIntent) {
-    // Fetch payment_intent from DB by paymentIntent.id
-    const payment = await Payment.findOne({ payment_intent_id: paymentIntent.payment_intent });
+async function handlePaymentIntentWebhookEvent(payload) {
+    const payment = await Payment.findOne({ payment_intent_id: payload.payment_intent });
 
-    // If payment_intent is found, send RabbitMQ continue order-flow success/failed
     if (payment) {
-        if (paymentIntent.status === 'succeeded') {
-            // send RabbitMQ message with payment_intent ID and order ID
+        if (payload.status === 'succeeded') {
             payment.payment_status = 'succeeded';
+            payment.total_payment = payload.amount_captured;
             await payment.save(); 
-            await publishPaymentCaptured({
-                paymentIntent: payment.payment_intent,
-                order_id: payment.order_id
-            });
-            console.log('send RabbitMQ continue order-flow success');
-        } else if (paymentIntent.status === 'failed') {
-            // TODO: Figure out what to do on fail
-            console.log('send RabbitMQ continue order-flow failed');
+            await publishPaymentCaptured(payment.order);
+        } else if (payload.status === 'failed') {
+            payment.payment_status = 'failed';
+            await payment.save();
+            await publishPaymentCapturedFailed(payment.order);
         } else {
             console.log('Something went wrong.');
         }
     }
-    // If payment_intent is not found, save payment_intent
+    // if payment is not found, create the payment. Waiting for the RabbitMQ event.
     else if (!payment) {
         const newPayment = new Payment({
-            payment_intent_id: paymentIntent.payment_intent,
-            total_payment: paymentIntent.amount,
-            payment_status: paymentIntent.status
+            payment_intent_id: payload.payment_intent,
+            total_payment: payload.amount,
+            payment_status: payload.status
         });
 
         try {
-            const savedPayment = await newPayment.save();
+            await newPayment.save();
         } catch (error) {
             console.log(error);
         }
@@ -45,21 +41,16 @@ async function handlePaymentIntentWebhookEvent(paymentIntent) {
 }
 
 async function handlePaymentIntentMessage(message) {
-    console.log('ORDERID', message._id)
-    // Fetch payment_intent from DB by paymentIntent.id
     const payment = await Payment.findOne({ payment_intent_id: message.paymentIntent });
     console.log(payment);
 
-    // If payment_intent is found, send RabbitMQ continue order-flow success/failed
     if (payment) {
+        payment.order = message;
+        await payment.save()
         if (payment.payment_status === 'succeeded') {
-            await publishPaymentCaptured({
-                order_id: message._id
-            });
-            console.log('send RabbitMQ continue order-flow success');
+            await publishPaymentCaptured(payment.order);
         } else if (payment.payment_status === 'failed') {
-            // TODO: Figure out what to do on fail
-            console.log('send RabbitMQ continue order-flow failed');
+            await publishPaymentCapturedFailed(payment.order);
         } else if (payment.payment_status === 'waiting') {
             console.log('This event has already been processed and will be ignored.')
         } 
@@ -67,18 +58,17 @@ async function handlePaymentIntentMessage(message) {
             console.log('Something went wrong.');
         }
     }
-    // If payment_intent is not found, save payment_intent
+    // if payment is not found, create the payment. Waiting for the webhook event.
     else if (!payment) {
         const newPayment = new Payment({
             payment_intent_id: message.paymentIntent,
             payment_status: 'waiting',
-            order_id: message._id   
+            order_id: message._id,
+            order: message
         });
 
         try {
-            const savedPayment = await newPayment.save();
-            console.log('Payment saved');
-            console.log(savedPayment);
+            await newPayment.save();
         } catch (error) {
             console.log(error);
         }
@@ -87,16 +77,14 @@ async function handlePaymentIntentMessage(message) {
 
 async function handlePaymentRefund(orderId) {
     const payment = await Payment.findOne({ order_id: orderId });
-    console.log(payment);
-    if (payment.payment_status === 'succeeded' && payment_total_payment > 0) {
+    if (payment.payment_status === 'succeeded' && payment.total_payment > 0) {
         const refund = await stripe.refunds.create({
-            payment_intent: payment_payment_intent_id,
+            payment_intent: payment.payment_intent_id,
           });
-
-        console.log(refund);
 
         if (refund.status === 'succeeded') {
             payment.payment_status = 'refunded';
+            console.log(`The payment for the order with ID: '${orderId}' has been refunded.`)
             await payment.save();
         }
     }
