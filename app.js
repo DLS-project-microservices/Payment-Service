@@ -1,6 +1,7 @@
 import 'dotenv/config';
 import SmeeClient from 'smee-client';
 import { consumeItemsReservedEvents } from './messages/consumeItemsReservedEvents.js';
+import { consumeShipmentSentFailed } from './messages/consumeShipmentSentFailed.js';
 import express from 'express';
 import mongoose from 'mongoose';
 import { handlePaymentIntentWebhookEvent } from './services/paymentService.js';
@@ -13,9 +14,10 @@ const smee = new SmeeClient({
 
 smee.start()
 
-// Not catching erros on purpose, so that the application crashes fast.
+// Not catching errors on purpose, so that the application crashes fast.
 await mongoose.connect(process.env.MONGODB_URI);
 await consumeItemsReservedEvents();
+await consumeShipmentSentFailed();
 
 const app = express();
 

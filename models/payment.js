@@ -11,7 +11,7 @@ const paymentSchema = new mongoose.Schema({
     },
     payment_status: {
         type: String,
-        enum: ['succeeded', 'failed', 'waiting'],
+        enum: ['succeeded', 'failed', 'waiting', 'refunded'],
         required: true
     },
     order_id: {
