@@ -24,8 +24,9 @@ const app = express();
 app.post('/webhook', express.json(), async (request, response) => {
   try {
     const event = request.body.data.object
-    await handlePaymentIntentWebhookEvent(event);
-
+    if (request.body.type === 'charge.succeeded') {
+      await handlePaymentIntentWebhookEvent(event);
+    }
     // Return a 200 response to acknowledge receipt of the event
     response.send();
   } catch (err) {

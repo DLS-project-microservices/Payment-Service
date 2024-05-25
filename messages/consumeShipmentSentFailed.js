@@ -1,8 +1,8 @@
-import { connectToRabbitMQ } from 'amqplib-retry-wrapper-dls';
+import channel from './connection.js';
 import publishPaymentCapturedFailed from './publishPaymentCapturedFailed.js';
 import { handlePaymentRefund } from '../services/paymentService.js';
 
-const channel = await connectToRabbitMQ(process.env.AMQP_HOST);
+
 
 async function consumeShipmentSentFailed() {
     const exchange = 'order_direct';
@@ -25,10 +25,11 @@ async function consumeShipmentSentFailed() {
             try {
                 if (msg !== null) {
                     const messageContent = JSON.parse(msg.content.toString());
-                    await handlePaymentRefund(messageContent._id.$oid);
+                    await handlePaymentRefund(messageContent.paymentIntent);
                     await publishPaymentCapturedFailed(messageContent)
                                 
                     channel.ack(msg);
+                    console.log('shipment_sent_failed processed succesfully.')
                 }
             } catch (error) {
                 console.error('Error processing shipment_sent_failed event:', error);

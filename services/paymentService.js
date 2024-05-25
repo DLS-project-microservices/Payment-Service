@@ -4,7 +4,7 @@ import publishPaymentCaptured from '../messages/publishPaymentCaptured.js';
 import publishPaymentCapturedFailed from '../messages/publishPaymentCapturedFailed.js';
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
-    apiVersion: "2020-08-27",
+    apiVersion: "2024-04-10",
   })
 
 async function handlePaymentIntentWebhookEvent(payload) {
@@ -42,7 +42,6 @@ async function handlePaymentIntentWebhookEvent(payload) {
 
 async function handlePaymentIntentMessage(message) {
     const payment = await Payment.findOne({ payment_intent_id: message.paymentIntent });
-    console.log(payment);
 
     if (payment) {
         payment.order = message;
@@ -75,18 +74,26 @@ async function handlePaymentIntentMessage(message) {
     }
 }
 
-async function handlePaymentRefund(orderId) {
-    const payment = await Payment.findOne({ order_id: orderId });
+async function handlePaymentRefund(paymentIntentId) {
+    const payment = await Payment.findOne({ payment_intent_id: paymentIntentId });
+    console.log(`Attempting to refund payment intent: ${payment.payment_intent_id}...`)
     if (payment.payment_status === 'succeeded' && payment.total_payment > 0) {
-        const refund = await stripe.refunds.create({
-            payment_intent: payment.payment_intent_id,
-          });
-
-        if (refund.status === 'succeeded') {
-            payment.payment_status = 'refunded';
-            console.log(`The payment for the order with ID: '${orderId}' has been refunded.`)
-            await payment.save();
+        try {
+            const refund = await stripe.refunds.create({
+                payment_intent: payment.payment_intent_id
+              });
+    
+            if (refund.status === 'succeeded') {
+                await Payment.findOneAndUpdate(
+                    { payment_intent_id: payment.payment_intent_id },
+                    { payment_status: 'refunded' }
+                  );
+                console.log(`The payment for the payment intent: '${paymentIntentId}' has been refunded.`)
+            }
         }
+        catch(error) {
+            console.log(error);
+        }     
     }
 }
 

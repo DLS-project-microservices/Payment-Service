@@ -1,7 +1,5 @@
-import { connectToRabbitMQ } from 'amqplib-retry-wrapper-dls';
 import { handlePaymentIntentMessage } from '../services/paymentService.js';
-
-const channel = await connectToRabbitMQ(process.env.AMQP_HOST);
+import channel from './connection.js';
 
 async function consumeItemsReservedEvents() {
     const exchange = 'order_fanout';
